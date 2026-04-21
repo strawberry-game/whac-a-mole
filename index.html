@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>もぐらたたき</title>
+  <style>
+    :root{
+      --bg1:#fff7ed;
+      --bg2:#ffedd5;
+      --panel:#fff;
+      --line:#fed7aa;
+      --text:#7c2d12;
+      --sub:#9a3412;
+      --accent:#ea580c;
+      --accent2:#fb923c;
+      --good:#16a34a;
+      --bad:#dc2626;
+      --shadow:0 12px 30px rgba(124,45,18,.15);
+    }
+
+    *{box-sizing:border-box;}
+    body{
+      margin:0;
+      font-family:"Hiragino Sans","Yu Gothic UI","Meiryo",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at top, #fff 0%, var(--bg1) 40%, var(--bg2) 100%);
+      min-height:100vh;
+      padding-bottom:60px;
+    }
+
+    .wrap{
+      max-width:980px;
+      margin:0 auto;
+      padding:20px;
+    }
+
+    .title{
+      text-align:center;
+      margin:8px 0 18px;
+    }
+    .title h1{
+      margin:0;
+      font-size:clamp(28px, 5vw, 48px);
+      letter-spacing:.06em;
+    }
+    .title p{
+      margin:8px 0 0;
+      color:var(--sub);
+      font-size:14px;
+    }
+
+    .panel{
+      background:rgba(255,255,255,.88);
+      border:2px solid var(--line);
+      border-radius:24px;
+      box-shadow:var(--shadow);
+      backdrop-filter: blur(4px);
+    }
+
+    .topbar{
+      display:grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap:12px;
+      padding:16px;
+      margin-bottom:16px;
+    }
+
+    .stat{
+      background:#fff7ed;
+      border:2px solid var(--line);
+      border-radius:18px;
+      padding:12px 14px;
+      text-align:center;
+    }
+    .stat .label{
+      font-size:12px;
+      color:var(--sub);
+      margin-bottom:4px;
+    }
+    .stat .value{
+      font-size:28px;
+      font-weight:800;
+      line-height:1.1;
+    }
+
+    .controls{
+      display:flex;
+      flex-wrap:wrap;
+      gap:10px;
+      align-items:center;
+      justify-content:center;
+      padding:0 16px 16px;
+    }
+
+    button, select{
+      font:inherit;
+    }
+
+    .btn{
+      border:none;
+      border-radius:999px;
+      padding:12px 20px;
+      font-weight:700;
+      cursor:pointer;
+      transition:transform .12s ease, box-shadow .12s ease, opacity .12s ease;
+    }
+    .btn:hover{ transform:translateY(-1px); }
+    .btn:active{ transform:translateY(1px) scale(.98); }
+    .btn-main{
+      color:white;
+      background:linear-gradient(135deg, var(--accent), var(--accent2));
+      box-shadow:0 10px 20px rgba(234,88,12,.28);
+    }
+    .btn-sub{
+      color:var(--text);
+      background:#fff;
+      border:2px solid var(--line);
+    }
+
+    .difficulty{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:999px;
+      padding:8px 14px;
+    }
+    .difficulty select{
+      border:none;
+      background:transparent;
+      color:var(--text);
+      outline:none;
+      font-weight:700;
+      cursor:pointer;
+    }
+
+    .game-area{
+      display:grid;
+      grid-template-columns: minmax(0, 1fr) 280px;
+      gap:16px;
+      align-items:start;
+    }
+
+    .board-panel{
+      padding:18px;
+    }
+
+    .board{
+      display:grid;
+      grid-template-columns:repeat(3, 1fr);
+      gap:14px;
+    }
+
+    .hole{
+      position:relative;
+      height:170px;
+      border:none;
+      padding:0;
+      background:linear-gradient(180deg,#dcfce7 0%, #bbf7d0 55%, #86efac 100%);
+      border-radius:24px;
+      cursor:pointer;
+      overflow:hidden;
+      box-shadow: inset 0 -10px 0 rgba(0,0,0,.05);
+    }
+
+    .hole:disabled{ cursor:default; }
+
+    .hole::before{
+      content:"";
+      position:absolute;
+      left:50%; bottom:18px;
+      transform:translateX(-50%);
+      width:72%; height:36px;
+      background:radial-gradient(ellipse at center, #3f2a1f 0%, #2a1b14 70%, #1c120d 100%);
+      border-radius:50%;
+      box-shadow: inset 0 4px 8px rgba(255,255,255,.08);
+      z-index:2;
+    }
+
+    .grass{
+      position:absolute;
+      inset:auto 0 28px 0;
+      height:26px;
+      background:
+        radial-gradient(circle at 8px 18px, #16a34a 0 8px, transparent 9px),
+        radial-gradient(circle at 26px 20px, #22c55e 0 8px, transparent 9px),
+        radial-gradient(circle at 44px 18px, #16a34a 0 8px, transparent 9px),
+        radial-gradient(circle at 62px 19px, #22c55e 0 8px, transparent 9px);
+      background-size:72px 26px;
+      background-repeat:repeat-x;
+      z-index:1;
+      opacity:.95;
+    }
+
+    .mole{
+      position:absolute;
+      left:50%; bottom:28px;
+      transform:translate(-50%, 120%);
+      width:84px;
+      height:96px;
+      z-index:0;
+      transition:transform .14s ease;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .hole.up .mole{
+      transform:translate(-50%, 0%);
+    }
+
+    .hole.hit .mole{
+      transform:translate(-50%, 14%) scale(.92);
+    }
+
+    .mole-body{
+      position:absolute;
+      left:50%; bottom:0;
+      transform:translateX(-50%);
+      width:84px;
+      height:72px;
+      background:#8b5e3c;
+      border-radius:44px 44px 28px 28px;
+      border:3px solid rgba(0,0,0,.08);
+    }
+    .mole-face{
+      position:absolute;
+      left:50%; top:18px;
+      transform:translateX(-50%);
+      width:58px;
+      height:44px;
+      background:#c08a61;
+      border-radius:50%;
+    }
+    .ear{
+      position:absolute;
+      top:8px;
+      width:16px;
+      height:16px;
+      background:#8b5e3c;
+      border-radius:50%;
+    }
+    .ear.left{ left:10px; }
+    .ear.right{ right:10px; }
+    .eye{
+      position:absolute;
+      top:15px;
+      width:6px;
+      height:8px;
+      background:#1f2937;
+      border-radius:50%;
+    }
+    .eye.left{ left:16px; }
+    .eye.right{ right:16px; }
+    .nose{
+      position:absolute;
+      left:50%; top:22px;
+      transform:translateX(-50%);
+      width:12px;
+      height:8px;
+      background:#7c2d12;
+      border-radius:50%;
+    }
+    .mouth{
+      position:absolute;
+      left:50%; top:30px;
+      transform:translateX(-50%);
+      width:18px;
+      height:8px;
+      border-bottom:2px solid #7c2d12;
+      border-radius:0 0 12px 12px;
+    }
+    .paw{
+      position:absolute;
+      bottom:6px;
+      width:18px;
+      height:12px;
+      background:#c08a61;
+      border-radius:10px;
+    }
+    .paw.left{ left:12px; }
+    .paw.right{ right:12px; }
+
+    .fx{
+      position:absolute;
+      left:50%; top:22px;
+      transform:translateX(-50%) scale(.5);
+      font-size:28px;
+      font-weight:900;
+      opacity:0;
+      pointer-events:none;
+      z-index:5;
+      text-shadow:0 2px 0 rgba(255,255,255,.7);
+    }
+    .hole.show-fx .fx{
+      animation:popFx .45s ease;
+    }
+    .fx.good{ color:var(--good); }
+    .fx.bad{ color:var(--bad); }
+
+    @keyframes popFx{
+      0%{ opacity:0; transform:translateX(-50%) translateY(8px) scale(.5); }
+      20%{ opacity:1; }
+      100%{ opacity:0; transform:translateX(-50%) translateY(-24px) scale(1.15); }
+    }
+
+    .side{
+      padding:16px;
+    }
+
+    .message{
+      padding:14px 16px;
+      border-radius:18px;
+      background:#fff7ed;
+      border:2px solid var(--line);
+      color:var(--sub);
+      font-size:14px;
+      line-height:1.6;
+      min-height:98px;
+      margin-bottom:14px;
+    }
+
+    .ranking{
+      background:#fff;
+      border:2px solid var(--line);
+      border-radius:18px;
+      padding:14px;
+    }
+    .ranking h3{
+      margin:0 0 10px;
+      font-size:16px;
+    }
+    .ranking ol{
+      margin:0;
+      padding-left:22px;
+      color:var(--sub);
+    }
+    .ranking li{
+      padding:4px 0;
+      font-weight:700;
+    }
+
+    .footer-fixed{
+      position:fixed;
+      bottom:0;
+      left:0;
+      width:100%;
+      background:#7c2d12;
+      color:#fff;
+      text-align:center;
+      padding:12px 0;
+      font-size:14px;
+      z-index:999;
+      box-shadow:0 -4px 14px rgba(0,0,0,.12);
+    }
+
+    .pulse{
+      animation:pulse .2s ease;
+    }
+    @keyframes pulse{
+      0%{ transform:scale(1); }
+      50%{ transform:scale(1.05); }
+      100%{ transform:scale(1); }
+    }
+
+    @media (max-width: 860px){
+      .game-area{
+        grid-template-columns:1fr;
+      }
+      .side{ order:-1; }
+    }
+
+    @media (max-width: 640px){
+      .topbar{
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .board{
+        grid-template-columns:repeat(2, 1fr);
+      }
+      .hole{
+        height:150px;
+      }
+      .mole{
+        transform:translate(-50%, 120%) scale(.9);
+      }
+      .hole.up .mole{
+        transform:translate(-50%, 0%) scale(.9);
+      }
+      .hole.hit .mole{
+        transform:translate(-50%, 14%) scale(.83);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="title">
+      <h1>🪵 もぐらたたき 🐹</h1>
+      <p>飛び出したもぐらをすばやくタップ！ 制限時間内にハイスコアを目指そう</p>
+    </div>
+
+    <div class="panel topbar">
+      <div class="stat">
+        <div class="label">スコア</div>
+        <div class="value" id="score">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">のこり時間</div>
+        <div class="value" id="time">30</div>
+      </div>
+      <div class="stat">
+        <div class="label">ヒット数</div>
+        <div class="value" id="hits">0</div>
+      </div>
+      <div class="stat">
+        <div class="label">ミス数</div>
+        <div class="value" id="misses">0</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn btn-main" id="startBtn">ゲーム開始</button>
+      <button class="btn btn-sub" id="resetBtn">リセット</button>
+      <div class="difficulty">
+        <label for="difficulty">難易度</label>
+        <select id="difficulty">
+          <option value="easy">かんたん</option>
+          <option value="normal" selected>ふつう</option>
+          <option value="hard">むずかしい</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="game-area">
+      <div class="panel board-panel">
+        <div class="board" id="board"></div>
+      </div>
+
+      <div class="panel side">
+        <div class="message" id="message">
+          「ゲーム開始」を押すともぐらが出てきます。<br>
+          もぐらを叩くと +10点、地面を叩くと -3点です。
+        </div>
+
+        <div class="ranking">
+          <h3>🏆 ハイスコア</h3>
+          <ol id="rankingList"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer-fixed">© 2026 STRAWBERRY ALL RIGHTS RESERVED.</div>
+
+  <script>
+    const board = document.getElementById('board');
+    const scoreEl = document.getElementById('score');
+    const timeEl = document.getElementById('time');
+    const hitsEl = document.getElementById('hits');
+    const missesEl = document.getElementById('misses');
+    const messageEl = document.getElementById('message');
+    const rankingList = document.getElementById('rankingList');
+    const startBtn = document.getElementById('startBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const difficultyEl = document.getElementById('difficulty');
+
+    const HOLE_COUNT = 9;
+    const GAME_TIME = 30;
+
+    const levels = {
+      easy:   { popMin: 750, popMax: 1150, visibleMin: 800, visibleMax: 1100, multiChance: 0.10 },
+      normal: { popMin: 520, popMax: 900,  visibleMin: 650, visibleMax: 900,  multiChance: 0.18 },
+      hard:   { popMin: 360, popMax: 720,  visibleMin: 460, visibleMax: 720,  multiChance: 0.26 }
+    };
+
+    let score = 0;
+    let hits = 0;
+    let misses = 0;
+    let timeLeft = GAME_TIME;
+    let gameRunning = false;
+    let countdownTimer = null;
+    let spawnTimer = null;
+    let activeSet = new Set();
+    let holes = [];
+
+    function rand(min, max){
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function createBoard(){
+      board.innerHTML = '';
+      holes = [];
+
+      for(let i=0;i<HOLE_COUNT;i++){
+        const btn = document.createElement('button');
+        btn.className = 'hole';
+        btn.setAttribute('aria-label', `穴 ${i+1}`);
+        btn.dataset.index = i;
+        btn.innerHTML = `
+          <div class="fx good">+10</div>
+          <div class="fx bad">MISS</div>
+          <div class="mole">
+            <div class="mole-body"></div>
+            <div class="ear left"></div>
+            <div class="ear right"></div>
+            <div class="mole-face">
+              <div class="eye left"></div>
+              <div class="eye right"></div>
+              <div class="nose"></div>
+              <div class="mouth"></div>
+            </div>
+            <div class="paw left"></div>
+            <div class="paw right"></div>
+          </div>
+          <div class="grass"></div>
+        `;
+
+        btn.addEventListener('click', () => onHoleClick(i));
+        board.appendChild(btn);
+        holes.push(btn);
+      }
+    }
+
+    function updateStats(){
+      scoreEl.textContent = score;
+      timeEl.textContent = timeLeft;
+      hitsEl.textContent = hits;
+      missesEl.textContent = misses;
+    }
+
+    function flashStat(el){
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+    }
+
+    function setMessage(html){
+      messageEl.innerHTML = html;
+    }
+
+    function showFx(hole, type){
+      hole.classList.remove('show-fx');
+      const good = hole.querySelector('.fx.good');
+      const bad = hole.querySelector('.fx.bad');
+      good.style.display = type === 'good' ? 'block' : 'none';
+      bad.style.display = type === 'bad' ? 'block' : 'none';
+      void hole.offsetWidth;
+      hole.classList.add('show-fx');
+    }
+
+    function popMole(index, duration){
+      if(!gameRunning) return;
+      const hole = holes[index];
+      activeSet.add(index);
+      hole.classList.add('up');
+      hole.classList.remove('hit');
+
+      setTimeout(() => {
+        activeSet.delete(index);
+        hole.classList.remove('up','hit');
+      }, duration);
+    }
+
+    function scheduleSpawn(){
+      if(!gameRunning) return;
+
+      const level = levels[difficultyEl.value] || levels.normal;
+      const wait = rand(level.popMin, level.popMax);
+
+      spawnTimer = setTimeout(() => {
+        if(!gameRunning) return;
+
+        const available = [...Array(HOLE_COUNT).keys()].filter(i => !activeSet.has(i));
+        if(available.length){
+          const popCount = Math.random() < level.multiChance && available.length >= 2 ? 2 : 1;
+          for(let n=0;n<popCount;n++){
+            const pool = [...Array(HOLE_COUNT).keys()].filter(i => !activeSet.has(i));
+            if(!pool.length) break;
+            const index = pool[rand(0, pool.length - 1)];
+            const visible = rand(level.visibleMin, level.visibleMax);
+            popMole(index, visible);
+          }
+        }
+        scheduleSpawn();
+      }, wait);
+    }
+
+    function onHoleClick(index){
+      if(!gameRunning) return;
+      const hole = holes[index];
+
+      if(activeSet.has(index)){
+        activeSet.delete(index);
+        hole.classList.remove('up');
+        hole.classList.add('hit');
+        score += 10;
+        hits += 1;
+        updateStats();
+        flashStat(scoreEl);
+        flashStat(hitsEl);
+        showFx(hole, 'good');
+      } else {
+        score = Math.max(0, score - 3);
+        misses += 1;
+        updateStats();
+        flashStat(missesEl);
+        showFx(hole, 'bad');
+      }
+    }
+
+    function startGame(){
+      clearTimers();
+      gameRunning = true;
+      score = 0;
+      hits = 0;
+      misses = 0;
+      timeLeft = GAME_TIME;
+      activeSet.clear();
+      holes.forEach(h => h.classList.remove('up','hit','show-fx'));
+      updateStats();
+
+      startBtn.textContent = 'プレイ中...';
+      startBtn.disabled = true;
+      difficultyEl.disabled = true;
+
+      setMessage('スタート！ もぐらをどんどん叩こう。<br>難易度: <b>' + difficultyEl.options[difficultyEl.selectedIndex].text + '</b>');
+
+      countdownTimer = setInterval(() => {
+        timeLeft--;
+        updateStats();
+        flashStat(timeEl);
+        if(timeLeft <= 0){
+          endGame();
+        }
+      }, 1000);
+
+      scheduleSpawn();
+    }
+
+    function endGame(){
+      gameRunning = false;
+      clearTimers();
+      activeSet.clear();
+      holes.forEach(h => h.classList.remove('up','hit'));
+      startBtn.textContent = 'もう一回あそぶ';
+      startBtn.disabled = false;
+      difficultyEl.disabled = false;
+
+      saveScore(score);
+      renderRanking();
+
+      let rankText = getRankText(score);
+      setMessage(`⏰ ゲーム終了！<br><b>${score}点</b> 獲得しました。<br>${rankText}`);
+    }
+
+    function getRankText(s){
+      if(s >= 220) return 'すごい！ もぐらたたき名人です。';
+      if(s >= 160) return 'かなり上手！ 反射神経ばっちり。';
+      if(s >= 100) return 'いい感じ！ まだまだスコア更新を狙えます。';
+      return '次はもっと高得点を目指そう！';
+    }
+
+    function clearTimers(){
+      if(countdownTimer) clearInterval(countdownTimer);
+      if(spawnTimer) clearTimeout(spawnTimer);
+      countdownTimer = null;
+      spawnTimer = null;
+    }
+
+    function resetGame(){
+      gameRunning = false;
+      clearTimers();
+      score = 0;
+      hits = 0;
+      misses = 0;
+      timeLeft = GAME_TIME;
+      activeSet.clear();
+      holes.forEach(h => h.classList.remove('up','hit','show-fx'));
+      updateStats();
+      startBtn.textContent = 'ゲーム開始';
+      startBtn.disabled = false;
+      difficultyEl.disabled = false;
+      setMessage('リセットしました。<br>「ゲーム開始」を押すと遊べます。');
+    }
+
+    function saveScore(newScore){
+      const key = 'mogura-ranking-v1';
+      const scores = JSON.parse(localStorage.getItem(key) || '[]');
+      scores.push(newScore);
+      scores.sort((a,b) => b-a);
+      const trimmed = scores.slice(0,5);
+      localStorage.setItem(key, JSON.stringify(trimmed));
+    }
+
+    function renderRanking(){
+      const key = 'mogura-ranking-v1';
+      const scores = JSON.parse(localStorage.getItem(key) || '[]');
+      rankingList.innerHTML = '';
+
+      if(!scores.length){
+        rankingList.innerHTML = '<li>まだ記録がありません</li>';
+        return;
+      }
+
+      scores.forEach((s, i) => {
+        const li = document.createElement('li');
+        li.textContent = `${i+1}位 : ${s}点`;
+        rankingList.appendChild(li);
+      });
+    }
+
+    startBtn.addEventListener('click', startGame);
+    resetBtn.addEventListener('click', resetGame);
+
+    createBoard();
+    updateStats();
+    renderRanking();
+  </script>
+</body>
+</html>
