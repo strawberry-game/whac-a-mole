@@ -784,7 +784,7 @@
         clearInterval(prestartTimer);
         prestartTimer = null;
         countdownOverlay.classList.remove('show');
-      endOverlay.classList.remove('show');
+        endOverlay.classList.remove('show');
         beginGame();
       }, 1000);
     }
@@ -927,6 +927,7 @@
       timeLeft = GAME_TIME;
       activeSet.clear();
       countdownOverlay.classList.remove('show');
+      endOverlay.classList.remove('show');
       holes.forEach(h => h.classList.remove('up','hit','show-fx'));
       updateStats();
     }
